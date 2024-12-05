@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>qLab Controller</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #282c34;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #00bfa6;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 36px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .section {
+            background-color: #333;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .section h2 {
+            font-size: 24px;
+            margin: 0 0 10px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background-color: #00bfa6;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #007d7e;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .cue-info {
+            font-size: 18px;
+            padding: 10px;
+            background-color: #444;
+            border-radius: 8px;
+        }
+
+        .cue-info p {
+            margin: 5px 0;
+        }
+
+        .audio-form input[type="range"] {
+            margin: 10px 0;
+        }
+
+        #audioLevels {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #audioLevels label {
+            font-size: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>qLab Control Interface</h1>
+    </header>
+
+    <div class="container">
+        <!-- Device Selection Section -->
+        <div class="section" id="deviceSelection">
+            <h2>Select Device</h2>
+            <form id="deviceForm">
+                <select id="deviceSelect" name="device_id">
+                    {% for device in devices %}
+                    <option value="{{ device.id }}">{{ device.name }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit">Select Device</button>
+            </form>
+        </div>
+
+        <!-- Workspace Selection Section -->
+        <div class="section" id="workspaceSection" style="display:none;">
+            <h2>Select Workspace</h2>
+            <form id="workspaceForm">
+                <select id="workspaceSelect" name="workspace_id"></select>
+                {% for workspace in workspaces %}
+                <option value="{{ workspace.id }}">{{ workspace.name }}</option>
+                {% endfor %}
+                <button type="submit">Select Workspace</button>
+            </form>
+        </div>
+
+        <div class="cue-info" id="current-cue">
+            <p id="cueNumber">Loading...</p>
+            <p id="cueName">Loading...</p>
+        </div>
+
+        <div class="cue-info" id="selected-cue">
+            <p id="selectedCueNumber">Loading...</p>
+            <p id="selectedCueName">Loading...</p>
+        </div>
+
+        <!-- Control Buttons -->
+        <div class="section button-group">
+            <button class="action-btn" data-action="go">Go</button>
+            <button class="action-btn" data-action="next">Next</button>
+            <button class="action-btn" data-action="previous">Previous</button>
+            <button class="action-btn" data-action="panic">Panic</button>
+            <button class="action-btn" data-action="pause">Pause</button>
+            <button class="action-btn" data-action="resume">Resume</button>
+        </div>
+
+        <div>
+            <h3>Cue List</h3>
+            <ul id="cue-list">
+                <h3>Cue List</h3>
+                <div id="cue-list">
+                    {% if cue_list %}
+                        <ul>
+                            {% for cue in cue_list %}
+                                <li>{{ cue['number'] }} - {{ cue['name'] }}</li>
+                            {% else %}
+                                <li>No cues available</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p>No cues found or unable to fetch cues</p>
+                    {% endif %}
+                </div>
+
+            </ul>
+        </div>
+
+        <!-- Audio Levels Section -->
+        <div class="section" id="audioLevels">
+            <h2>Audio Levels</h2>
+            <form id="audioForm">
+                <label for="master">Master:</label>
+                <input type="range" id="master" name="master" min="0" max="1" step="0.1" value="1">
+                <label for="left">Left:</label>
+                <input type="range" id="left" name="left" min="0" max="1" step="0.1" value="1">
+                <label for="right">Right:</label>
+                <input type="range" id="right" name="right" min="0" max="1" step="0.1" value="1">
+                <button type="submit">Set Audio Levels</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+            // Function to fetch and update the current cue
+            function updateCurrentCue() {
+                fetch('/cue/active')
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('cueNumber').innerText = data.number || "N/A";
+                        document.getElementById('cueName').innerText = data.name || "No Cue Selected";
+                    })
+                    .catch(error => console.error("Error fetching current cue:", error));
+            }
+
+            // Function to fetch and update the selected cue
+            function updateSelectedCue() {
+                fetch('/cue/selected')
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('selectedCueNumber').innerText = data.number || "N/A";
+                        document.getElementById('selectedCueName').innerText = data.name || "No Cue Selected";
+                    })
+                    .catch(error => console.error("Error fetching selected cue:", error));
+            }
+
+            // Set an interval to periodically update the cues every 2 seconds
+            setInterval(() => {
+                updateCurrentCue();
+                updateSelectedCue();
+            }, 2000);
+
+            // Update audio levels display from server
+            function updateAudioLevels() {
+                fetch('/audio_levels')
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('master').value = data.master;
+                        document.getElementById('left').value = data.left;
+                        document.getElementById('right').value = data.right;
+                    });
+            }
+
+
+            document.getElementById('deviceForm').addEventListener('submit', function (event) {
+                event.preventDefault();
+                const deviceId = document.getElementById('deviceSelect').value;
+                console.log("Device selected:", deviceId);
+
+                fetch('/fetch_workspaces', {
+                    method: 'POST',
+                    body: new URLSearchParams({
+                        'device_id': deviceId
+                    }),
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                }).then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            return fetch('/current_workspaces');
+                        } else {
+                            alert(data.message || 'Failed to fetch workspaces');
+                            return Promise.reject('No workspaces available');
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(workspaceData => {
+                        const workspaceSelect = document.getElementById('workspaceSelect');
+                        const workspaceSection = document.getElementById('workspaceSection');
+
+                        // Show workspace section
+                        workspaceSection.style.display = 'block';
+
+                        // Clear previous options
+                        workspaceSelect.innerHTML = '';
+
+                        // Populate workspace options
+                        if (workspaceData.status !== 'error' && Array.isArray(workspaceData.workspaces)) {
+                            workspaceData.workspaces.forEach(workspace => {
+                                const option = document.createElement('option');
+                                option.value = workspace.uniqueID; // Use uniqueID to track workspace
+                                option.textContent = workspace.displayName;
+                                workspaceSelect.appendChild(option);
+                            });
+                        } else {
+                            workspaceSection.style.display = 'none';
+                            alert(workspaceData.message || 'No workspaces available');
+                        }
+                    })
+                    .catch(error => console.error('Error fetching workspaces:', error));
+            });
+
+            // Handle workspace selection form submission
+            document.getElementById('workspaceForm').addEventListener('submit', function (event) {
+                event.preventDefault();
+                const workspaceId = document.getElementById('workspaceSelect').value;
+                console.log("Selected workspace:", workspaceId);
+
+                fetch('/select_workspace', {
+                    method: 'POST',
+                    body: new URLSearchParams({
+                        'workspace_id': workspaceId
+                    }),
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                }).then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            alert("Connected to workspace: " + data.workspace);
+                            // Optionally, you can trigger further updates like fetching current cue
+                            setInterval(() => {
+                                updateCurrentCue();
+                                updateSelectedCue();
+                            }, 2000);
+                        } else {
+                            alert("Failed to connect to workspace: " + data.message);
+                        }
+                    })
+                    .catch(error => console.error('Error selecting workspace:', error));
+            });
+
+
+            // Control actions
+            // Handle control button actions (Go, Next, etc.)
+            document.querySelectorAll('.action-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const action = this.dataset.action;
+                    console.log("Action to be sent: ", action);
+
+                    // Define the corresponding OSC commands for each button action
+                    let oscCommand = '';
+                    switch (action) {
+                        case 'go': oscCommand = '/cue/go'; break;
+                        case 'next': oscCommand = '/cue/next'; break;
+                        case 'previous': oscCommand = '/cue/previous'; break;
+                        case 'panic': oscCommand = '/cue/panic'; break;
+                        case 'pause': oscCommand = '/cue/pause'; break;
+                        case 'resume': oscCommand = '/cue/resume'; break;
+                        default: oscCommand = ''; break;
+                    }
+
+                    // Send the command to the server (OSC client)
+                    fetch('/button_action', {
+                        method: 'POST',
+                        body: new URLSearchParams({
+                            'data-action': action
+                        }),
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    }).then(response => response.json())
+                        .then(data => {
+                            console.log(data);
+                            // After sending the action, update the cues
+                            updateCurrentCue();
+                            updateSelectedCue();
+                        })
+                        .catch(error => console.error("Error in button action:", error));
+                });
+            });
+
+            function fetchCueList() {
+                fetch('/cue/list', {
+                    method: 'GET',
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === "success") {
+                            // Assuming the cue list is returned
+                            document.getElementById('cue-list').innerHTML = '';
+                            data.cue_list.forEach(cue => {
+                                const cueElement = document.createElement('li');
+                                cueElement.textContent = `${cue.number} - ${cue.name}`;
+                                document.getElementById('cue-list').appendChild(cueElement);
+                            });
+                        } else {
+                            console.error('Failed to fetch cue list:', data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching cue list:', error);
+                    });
+            }
+
+        });
+    </script>
+
+
+</body>
+
+</html>
