@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>qLab Controller</title>
+    <base href="{{ url_for('static', filename='') }}">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -32,6 +33,10 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
+            text-align: center;
+            align-items: center;
+            
+
         }
 
         .section {
@@ -44,6 +49,11 @@
             font-size: 24px;
             margin: 0 0 10px;
         }
+
+        #controlSec,
+        #screenshotSec {
+            display: none;
+        } 
 
         .button-group {
             display: flex;
@@ -66,34 +76,24 @@
             background-color: #007d7e;
         }
 
+        button[data-action="go"]{
+            background-color: rgb(73, 109, 12);
+        }
+        
+        button[data-action="go"]:hover{
+            background-color: rgb(50, 80, 12);
+        }
+
+        button[data-action="panic"]{
+            background-color: rgb(133, 30, 30);
+        }
+
+        button[data-action="panic"]:hover{
+            background-color: rgb(109, 12, 12);
+        }
         input[type="range"] {
             width: 100%;
             margin: 10px 0;
-        }
-
-        .cue-info {
-            font-size: 18px;
-            padding: 10px;
-            background-color: #444;
-            border-radius: 8px;
-        }
-
-        .cue-info p {
-            margin: 5px 0;
-        }
-
-        .audio-form input[type="range"] {
-            margin: 10px 0;
-        }
-
-        #audioLevels {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        #audioLevels label {
-            font-size: 16px;
         }
     </style>
 </head>
@@ -129,104 +129,36 @@
             </form>
         </div>
 
-        <div class="cue-info" id="current-cue">
-            <p id="cueNumber">Loading...</p>
-            <p id="cueName">Loading...</p>
+        <!-- Screenshot -->
+        <div class="section" id="screenshotSec">
+            <h2>Workspace Screenshot</h2>
+            <img id="screenshot" src="./screenshot.png" alt="Screenshot" style="width: 100%; max-width: 720px;">
         </div>
 
-        <div class="cue-info" id="selected-cue">
-            <p id="selectedCueNumber">Loading...</p>
-            <p id="selectedCueName">Loading...</p>
+        <!-- Cues Info -->
+        <div class="section" id="cuesSec">
+            <h2>Active Cue:</h2>
+            <p><span id="activeCueNumber">None</span> | "<span id="activeCueName">None</span>"</p>
+            <h2>Selected Cue:</h2>
+            <p><span id="selectedCueNumber">None</span> | "<span id="selectedCueName">None</span>"</p>
         </div>
+
 
         <!-- Control Buttons -->
-        <div class="section button-group">
-            <button class="action-btn" data-action="go">Go</button>
-            <button class="action-btn" data-action="next">Next</button>
+        <div class="section button-group" id="controlSec">
             <button class="action-btn" data-action="previous">Previous</button>
-            <button class="action-btn" data-action="panic">Panic</button>
+            <button class="action-btn" data-action="next">Next</button><br><br>
+            <button class="action-btn" data-action="go">Go</button>
+            <button class="action-btn" data-action="panic">Panic</button><br><br>
             <button class="action-btn" data-action="pause">Pause</button>
             <button class="action-btn" data-action="resume">Resume</button>
         </div>
 
-        <div>
-            <h3>Cue List</h3>
-            <ul id="cue-list">
-                <h3>Cue List</h3>
-                <div id="cue-list">
-                    {% if cue_list %}
-                        <ul>
-                            {% for cue in cue_list %}
-                                <li>{{ cue['number'] }} - {{ cue['name'] }}</li>
-                            {% else %}
-                                <li>No cues available</li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p>No cues found or unable to fetch cues</p>
-                    {% endif %}
-                </div>
-
-            </ul>
-        </div>
-
-        <!-- Audio Levels Section -->
-        <div class="section" id="audioLevels">
-            <h2>Audio Levels</h2>
-            <form id="audioForm">
-                <label for="master">Master:</label>
-                <input type="range" id="master" name="master" min="0" max="1" step="0.1" value="1">
-                <label for="left">Left:</label>
-                <input type="range" id="left" name="left" min="0" max="1" step="0.1" value="1">
-                <label for="right">Right:</label>
-                <input type="range" id="right" name="right" min="0" max="1" step="0.1" value="1">
-                <button type="submit">Set Audio Levels</button>
-            </form>
-        </div>
     </div>
 
     <script>
         window.addEventListener('DOMContentLoaded', (event) => {
-            // Function to fetch and update the current cue
-            function updateCurrentCue() {
-                fetch('/cue/active')
-                    .then(response => response.json())
-                    .then(data => {
-                        document.getElementById('cueNumber').innerText = data.number || "N/A";
-                        document.getElementById('cueName').innerText = data.name || "No Cue Selected";
-                    })
-                    .catch(error => console.error("Error fetching current cue:", error));
-            }
-
-            // Function to fetch and update the selected cue
-            function updateSelectedCue() {
-                fetch('/cue/selected')
-                    .then(response => response.json())
-                    .then(data => {
-                        document.getElementById('selectedCueNumber').innerText = data.number || "N/A";
-                        document.getElementById('selectedCueName').innerText = data.name || "No Cue Selected";
-                    })
-                    .catch(error => console.error("Error fetching selected cue:", error));
-            }
-
-            // Set an interval to periodically update the cues every 2 seconds
-            setInterval(() => {
-                updateCurrentCue();
-                updateSelectedCue();
-            }, 2000);
-
-            // Update audio levels display from server
-            function updateAudioLevels() {
-                fetch('/audio_levels')
-                    .then(response => response.json())
-                    .then(data => {
-                        document.getElementById('master').value = data.master;
-                        document.getElementById('left').value = data.left;
-                        document.getElementById('right').value = data.right;
-                    });
-            }
-
-
+            // Handle workspace selection form submission
             document.getElementById('deviceForm').addEventListener('submit', function (event) {
                 event.preventDefault();
                 const deviceId = document.getElementById('deviceSelect').value;
@@ -293,18 +225,32 @@
                 }).then(response => response.json())
                     .then(data => {
                         if (data.status === 'success') {
-                            alert("Connected to workspace: " + data.workspace);
-                            // Optionally, you can trigger further updates like fetching current cue
-                            setInterval(() => {
-                                updateCurrentCue();
-                                updateSelectedCue();
-                            }, 2000);
+                            document.getElementById('screenshotSec').style.display = "block";
+                            document.getElementById('controlSec').style.display = "block";
+                            // alert("Connected to workspace: " + data.workspace);
+                            // Set an interval to refresh the screenshot every 1000ms (1 second)
+                            setInterval(refreshScreenshot, 0);
+                            setInterval(fetchCues, 0);
                         } else {
                             alert("Failed to connect to workspace: " + data.message);
                         }
                     })
                     .catch(error => console.error('Error selecting workspace:', error));
             });
+
+            // Fetch the active and selected cues every second
+            function fetchCues() {
+                fetch('/cue_info')
+                    .then(response => response.json())
+                    .then(data => {
+// Object { active_cue_name: "N/A", active_cue_number: "N/A", selected_cue_name: 'SFX    -    Mirror sound (1)      -     "Let this fairy-tale begin!"', selected_cue_number: "6" }
+                        document.getElementById('activeCueNumber').textContent = data.active_cue_number || 'N/A';
+                        document.getElementById('activeCueName').textContent = data.active_cue_name || 'N/A';
+                        document.getElementById('selectedCueNumber').textContent = data.selected_cue_number || 'N/A';
+                        document.getElementById('selectedCueName').textContent = data.selected_cue_name || 'N/A';
+                    })
+                    .catch(error => console.error('Error fetching cues:', error));
+            }
 
 
             // Control actions
@@ -338,40 +284,28 @@
                     }).then(response => response.json())
                         .then(data => {
                             console.log(data);
-                            // After sending the action, update the cues
-                            updateCurrentCue();
-                            updateSelectedCue();
                         })
                         .catch(error => console.error("Error in button action:", error));
                 });
             });
 
-            function fetchCueList() {
-                fetch('/cue/list', {
-                    method: 'GET',
+
+        // This function will refresh the image every second
+        function refreshScreenshot() {
+            fetch('/screenshot')  // Make a GET request to fetch the screenshot as base64
+                .then(response => response.json())
+                .then(data => {
+                    if (data.screenshot) {
+                        // Set the src attribute of the image to the base64 string
+                        document.getElementById('screenshot').src = 'data:image/png;base64,' + data.screenshot;
+                        document.getElementById('screenshot').style.display = 'block';
+                    }
                 })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === "success") {
-                            // Assuming the cue list is returned
-                            document.getElementById('cue-list').innerHTML = '';
-                            data.cue_list.forEach(cue => {
-                                const cueElement = document.createElement('li');
-                                cueElement.textContent = `${cue.number} - ${cue.name}`;
-                                document.getElementById('cue-list').appendChild(cueElement);
-                            });
-                        } else {
-                            console.error('Failed to fetch cue list:', data.message);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching cue list:', error);
-                    });
-            }
+                .catch(error => console.error('Error fetching screenshot:', error));
+        }
+    });
 
-        });
     </script>
-
 
 </body>
 
