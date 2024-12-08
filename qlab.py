@@ -6,8 +6,8 @@ from flask_cors import CORS # type: ignore
 from pythonosc import udp_client, dispatcher, osc_server # type: ignore
 from PIL import ImageGrab, Image # type: ignore
 import os
+import platform
 import base64
-from io import BytesIO
 import logging
 import socket
 import subprocess
@@ -33,8 +33,21 @@ def get_local_ip():
         s.close()
     return ip
 
+# If platform is not macOS, abort and print an error message
+if platform.system() != "Darwin":
+    print("Error: This script is only compatible with macOS.\nIt can be modified to work on other platforms, just remove the macOS-specific parts such as AppleScript, etc.")
+    exit(1)
+
 LOCAL_IP = get_local_ip()
-print(f"Local IP: {LOCAL_IP}")
+# If local ip != 127.0.0.1, use it as the default QLab IP
+if LOCAL_IP != "127.0.0.1":
+    print(f"Detected local IP: {LOCAL_IP}")
+    QLAB_IP = LOCAL_IP
+else:
+    # Otherwise, abort and print an error message
+    print("Error: Could not detect local IP address. Please try again in 5 seconds, or set QLAB_IP manually.")
+    exit(1)
+
 
 # OSC Client setup
 QLAB_IP = LOCAL_IP  # Default QLab IP
@@ -140,6 +153,7 @@ def button_action():
                 "next": f"/workspace/{selected_workspace}/select/next",
                 "previous": f"/workspace/{selected_workspace}/select/previous",
                 "panic": f"/workspace/{selected_workspace}/panic",
+                "stop": f"/workspace/{selected_workspace}/hardStop",
                 "pause": f"/workspace/{selected_workspace}/pause",
                 "resume": f"/workspace/{selected_workspace}/resume",
             }.get(action)
@@ -263,9 +277,9 @@ def fetch_current_cue_periodically():
         except subprocess.CalledProcessError as e:
             print(f"Error: {e.stderr.strip()}")
 
-        # Log current values (debugging purposes)
-        print(f"Selected cue: {selected_cue_number} - {selected_cue_name}")
-        print(f"Active cue: {active_cue_number} - {active_cue_name}")
+        # # Log current values (debugging purposes)
+        # print(f"Selected cue: {selected_cue_number} - {selected_cue_name}")
+        # print(f"Active cue: {active_cue_number} - {active_cue_name}")
 
         # Wait before checking again
         time.sleep(0.25)
@@ -305,27 +319,6 @@ def capture_screenshot():
 
         # print("Screenshot captured and encoded.")
         time.sleep(0.25)
-        
-    
-
-
-    # while True:
-    #     screenshot = ImageGrab.grab()
-    #     screenshot = screenshot.resize((720, 480))
-        
-    # #     # Save screenshot to a BytesIO object
-    #     buffered = BytesIO()
-    #     screenshot.save(buffered, format="PNG")
-        
-    #     # Encode the image as a base64 string
-    #     img_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
-        
-    #     # Store the base64 string in a global variable
-    #     global current_screenshot
-    #     current_screenshot = img_base64
-        
-    #     # print("Screenshot captured and encoded.")
-    #     time.sleep(0.5)
 
 # Initialize a global variable to hold the base64 string
 current_screenshot = ""
