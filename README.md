@@ -24,7 +24,7 @@ It will start the server on port 5000, and show you the IP address of the server
 - This project utilizes AppleScript to control QLab. It is not a full-fledged QLab controller, and it does not support all the features of QLab.
 
 ## License
-This project is licensed under the MIT License. See the LICENSE file for more details.
+This project is licensed under the Apache License. See the LICENSE file for more details.
 > [!NOTE]  
 > I did use Copilot that did do like 80% of the heavy lifting. I have absolutely no clue where the bits and pieces of code came from. If you see your code in here, please let me know and I will add you to the credits.
 
