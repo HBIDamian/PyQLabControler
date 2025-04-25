@@ -1,305 +1,1081 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>qLab Controller</title>
-        <base href="{{ url_for('static', filename='') }}">
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                background-color: #282c34;
-                color: #fff;
-                margin: 0;
-                padding: 0;
-            }
 
-            header {
-                background-color: #00bfa6;
-                padding: 20px;
-                text-align: center;
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QLab Remote</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Base Styles */
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            padding-top: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        
+        .container { max-width: 800px; }
+        
+        /* Card Styles */
+        .card {
+            background-color: #1e1e1e;
+            border: 1px solid #333;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        
+        .card-header {
+            background-color: #272727;
+            border-bottom: 1px solid #333;
+            font-weight: bold;
+        }
+        
+        /* Button Styles */
+        .btn-primary {
+            background-color: #6200ee;
+            border-color: #6200ee;
+        }
+        
+        .btn-primary:hover {
+            background-color: #7c43bd;
+            border-color: #7c43bd;
+        }
+        
+        .btn-success {
+            background-color: #03dac6;
+            border-color: #03dac6;
+            color: #000;
+        }
+        
+        .btn-success:hover {
+            background-color: #00b3a6;
+            border-color: #00b3a6;
+            color: #000;
+        }
+        
+        .btn-danger {
+            background-color: #cf6679;
+            border-color: #cf6679;
+        }
+        
+        .btn-danger:hover {
+            background-color: #ba4f60;
+            border-color: #ba4f60;
+        }
+        
+        /* Transport Button Styles */
+        .btn-transport, .btn-transport-sm {
+            margin: 5px;
+        }
+        
+        .btn-transport {
+            font-size: 1.5rem;
+            width: 80px;
+            height: 80px;
+        }
+        
+        .btn-transport-sm {
+            font-size: 1rem;
+            width: 60px;
+            height: 60px;
+        }
+        
+        /* Mobile responsive transport buttons */
+        @media (max-width: 576px) {
+            .btn-transport {
+                font-size: 1.2rem;
+                width: 50px;
+                height: 50px;
             }
+            
+            .btn-transport-sm {
+                font-size: 0.8rem;
+                width: 40px;
+                height: 40px;
+            }
+            
+            .btn-transport svg {
+                width: 24px;
+                height: 24px;
+            }
+            
+            .btn-transport-sm svg {
+                width: 20px;
+                height: 20px;
+            }
+        }
+        
+        /* Cue Information Display */
+        .cue-info {
+            background-color: #303030;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 5px 0;
+            min-height: 80px;
+        }
+        
+        .cue-number {
+            font-weight: bold;
+            color: #bb86fc;
+        }
+        
+        .cue-name { font-size: 1.1rem; }
+        .cue-type {
+            font-size: 0.8rem;
+            color: #03dac6;
+        }
+        
+        /* Connection Status Indicators */
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        
+        .status-connected { background-color: #4caf50; }
+        .status-disconnected { background-color: #f44336; }
+        
+        /* Instance List Styles */
+        .instance-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .instance-item {
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            background-color: #2a2a2a;
+            border-left: 3px solid #444;
+        }
+        
+        .instance-item:hover { 
+            background-color: #333;
+            border-left-color: #6200ee;
+        }
+        
+        .instance-item.selected {
+            background-color: #6200ee40;
+            border-left: 3px solid #6200ee;
+        }
+        
+        /* Stats and Connection Information */
+        .stats-card { font-size: 0.85rem; }
+        
+        .stats-value {
+            font-weight: bold;
+            color: #bb86fc;
+        }
+        
+        #connectionStatus { font-size: 0.85rem; }
+        
+        /* Events Section */
+        #eventsList {
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.85em;
+        }
+        
+        .event-item {
+            padding: 3px;
+            border-bottom: 1px solid #444;
+        }
+        
+        /* Form and UI Elements */
+        .dropdown-menu {
+            background-color: #272727;
+            border-color: #444;
+        }
+        
+        .dropdown-item { color: #e0e0e0; }
+        .dropdown-item:hover {
+            background-color: #333;
+            color: #fff;
+        }
+        
+        .form-control {
+            background-color: #333;
+            border-color: #444;
+            color: #e0e0e0;
+        }
+        
+        .form-control:focus {
+            background-color: #3a3a3a;
+            border-color: #6200ee;
+            color: #e0e0e0;
+            box-shadow: 0 0 0 0.25rem rgba(98, 0, 238, 0.25);
+        }
+        
+        /* Utility Classes */
+        .hidden { display: none; }
+        .connected { background-color: #4caf50; }
+        .disconnected { background-color: #f44336; }
+        
+        /* Layout Control */
+        #instanceSelection { display: block; }
+        #controlPanel { display: none; }
+        #refreshInstancesBtn { display: none; }
+        
+        /* Current/Next Cue Panel styling */
+        .cue-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .cue-box {
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #333;
+        }
+        
+        .cue-box h3 {
+            margin: 0 0 5px 0;
+            color: #2962ff;
+            border-bottom: 1px solid #555;
+            padding-bottom: 5px;
+        }
+        
+        .current-selected-cue {
+            border-left: 4px solid #4caf50;
+        }
+        
+        .next-cue {
+            border-left: 4px solid #ff9800;
+        }
+        
+        /* Cue content layout - side by side */
+        .cue-content {
+            display: flex;
+            align-items: center;
+        }
+        
+        .cue-number {
+            font-weight: bold;
+            color: #bb86fc;
+            font-size: 2rem;
+            margin-right: 15px;
+            min-width: 60px;
+        }
+        
+        .cue-details {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .cue-name { 
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+        }
+        
+        .cue-type {
+            font-size: 0.8rem;
+            color: #03dac6;
+            font-style: italic;
+        }
+        
+        .loading {
+            position: relative;
+        }
+        
+        .loading::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /*background-color: rgba(0, 0, 0, 0.5);*/
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /*
+        .loading::before {
+            content: "Loading...";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            color: #444;
+        }*/
+        
+        /* AppleScript specific styles */
+        .qlabStatusWrapper {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .qlabStatus {
+            padding: 8px 15px;
+            border-radius: 4px;
+            display: inline-block;
+            font-weight: bold;
+        }
+        
+        .qlabStatus.running {
+            background-color: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+            border: 1px solid #4CAF50;
+        }
+        
+        .qlabStatus.notRunning {
+            background-color: rgba(244, 67, 54, 0.2);
+            color: #F44336;
+            border: 1px solid #F44336;
+        }
+        
+        .workspace-item {
+            position: relative;
+            padding-left: 15px;
+        }
+        
+        .workspace-icon {
+            margin-right: 10px;
+            color: #03dac6;
+        }
+        
+        .no-workspaces-message {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+            font-style: italic;
+        }
+    </style>
+</head>
 
-            h1 {
-                margin: 0;
-                font-size: 36px;
-            }
+<body>
+    <div class="container">
+        <div class="text-center mb-4">
+            <h1>QLab Remote</h1>
+            <p class="text-muted">Web-based remote control for Figure53's QLab</p>
+        </div>
 
-            .container {
-                max-width: 1200px;
-                margin: 20px auto;
-                padding: 20px;
-                display: flex;
-                flex-direction: column;
-                gap: 20px;
-                text-align: center;
-                align-items: center;
-            }
-
-            .section {
-                background-color: #333;
-                padding: 20px;
-                border-radius: 8px;
-            }
-
-            .section h2 {
-                font-size: 24px;
-                margin: 0 0 10px;
-            }
-
-            #controlSec,
-            #screenshotSec {
-                display: none;
-            }
-
-            .button-group {
-                display: flex;
-                gap: 10px;
-                flex-wrap: wrap;
-            }
-
-            button {
-                background-color: #00bfa6;
-                color: #fff;
-                border: none;
-                padding: 10px 20px;
-                font-size: 16px;
-                cursor: pointer;
-                border-radius: 5px;
-                transition: background-color 0.3s ease;
-            }
-
-            button:hover {
-                background-color: #007d7e;
-            }
-
-            button[data-action="go"] {
-                background-color: rgb(73, 109, 12);
-            }
-
-            button[data-action="go"]:hover {
-                background-color: rgb(50, 80, 12);
-            }
-
-            button[data-action="panic"] {
-                background-color: rgb(133, 30, 30);
-            }
-
-            button[data-action="panic"]:hover {
-                background-color: rgb(109, 12, 12);
-            }
-
-            input[type="range"] {
-                width: 100%;
-                margin: 10px 0;
-            }
-        </style>
-    </head>
-    <body>
-        <header>
-            <h1>qLab Control Interface</h1>
-        </header>
-        <div class="container">
-            <!-- Device Selection Section -->
-            <div class="section" id="deviceSelection">
-                <h2>Select Device</h2>
-                <form id="deviceForm">
-                    <select id="deviceSelect" name="device_id">
-                        {% for device in devices %}
-                        <option value="{{ device.id }}">{{ device.name }}</option>
-                        {% endfor %}
-                    </select>
-                    <button type="submit">Select Device</button>
-                </form>
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>QLab Status</span>
+                <div id="connectionStatus">
+                    <span class="status-indicator status-disconnected"></span>
+                    <span id="connectionText">Disconnected</span>
+                </div>
             </div>
-
-            <!-- Workspace Selection Section -->
-            <div class="section" id="workspaceSection" style="display:none;">
-                <h2>Select Workspace</h2>
-                <form id="workspaceForm">
-                    <select id="workspaceSelect" name="workspace_id"></select>
-                    {% for workspace in workspaces %}
-                    <option value="{{ workspace.id }}">{{ workspace.name }}</option>
-                    {% endfor %}
-                    <button type="submit">Select Workspace</button>
-                </form>
-            </div>
-
-            <!-- Screenshot -->
-            <div class="section" id="screenshotSec">
-                <h2>Workspace Screenshot</h2>
-                <!-- Spoiler -->
-                <details>
-                    <summary>Click to view the screenshot</summary>
-                    <img id="screenshot" src="./screenshot.png" alt="Screenshot" style="width: 100%; max-width: 720px;">
-                </details>
-
-            </div>
-
-            <!-- Cues Info -->
-            <div class="section" id="cuesSec">
-                <h2>Last Active/Playing Cue:</h2>
-                <p><span id="activeCueNumber">None</span> | "<span id="activeCueName">None</span>"</p>
-                <h2>Selected Cue:</h2>
-                <p><span id="selectedCueNumber">None</span> | "<span id="selectedCueName">None</span>"</p>
-            </div>
-
-
-            <!-- Control Buttons -->
-            <div class="section button-group" id="controlSec">
-                <button class="action-btn" data-action="previous">Previous</button>
-                <button class="action-btn" data-action="next">Next</button><br><br>
-                <button class="action-btn" data-action="go">Go</button>
-                <button class="action-btn" data-action="panic">Panic</button>
-                <button class="action-btn" data-action="stop">Stop</button><br><br>
-                <button class="action-btn" data-action="pause">Pause</button>
-                <button class="action-btn" data-action="resume">Resume</button>
+            <div class="card-body">
+                <div id="qlabStatusWrapper" class="qlabStatusWrapper">
+                    <div id="qlabStatus" class="qlabStatus notRunning">
+                        QLab is not running
+                    </div>
+                </div>
+                
+                <div id="instancesSection">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5>Available Workspaces</h5>
+                        <button id="refreshBtn" class="btn btn-sm btn-outline-secondary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd"
+                                    d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z" />
+                                <path
+                                    d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466" />
+                            </svg>
+                            Refresh
+                        </button>
+                    </div>
+                    <span id="refreshStatus"></span>
+                    <div class="instance-list" id="instancesList">
+                    </div>
+                </div>
+                <div id="connectedInstanceSection" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 id="instanceName">Not Connected</h5>
+                            <!--<p id="instanceIP" class="text-muted mb-0">--</p> -->
+                        </div>
+                        <button id="disconnectBtn" class="btn btn-sm btn-outline-danger">
+                            Disconnect
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
-        <script>
-            window.addEventListener('DOMContentLoaded', (event) => {
-                // Handle workspace selection form submission
-                document.getElementById('deviceForm').addEventListener('submit', function (event) {
-                    event.preventDefault();
-                    const deviceId = document.getElementById('deviceSelect').value;
-                    console.log("Device selected:", deviceId);
-                    fetch('/fetch_workspaces', {
-                        method: 'POST',
-                        body: new URLSearchParams({
-                            'device_id': deviceId
-                        }),
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                        }
-                    }).then(response => response.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                return fetch('/current_workspaces');
-                            } else {
-                                alert(data.message || 'Failed to fetch workspaces');
-                                return Promise.reject('No workspaces available');
-                            }
-                        })
-                        .then(response => response.json())
-                        .then(workspaceData => {
-                            const workspaceSelect = document.getElementById('workspaceSelect');
-                            const workspaceSection = document.getElementById('workspaceSection');
 
-                            // Show workspace section
-                            workspaceSection.style.display = 'block';
+        <div id="controlPanel" class="hidden">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <span>Cue Information</span>
+                </div>
+                <div class="card-body">
+                    <div class="cue-panel">
+                        <div class="cue-box current-selected-cue" id="current-selected-cue">
+                            <h3>Current Selected Cue</h3>
+                            <div class="cue-content">
+                                <div class="cue-number" id="current-selected-cue-number">--</div>
+                                <div class="cue-details">
+                                    <div class="cue-name" id="current-selected-cue-name">Not Connected</div>
+                                    <div class="cue-type" id="current-selected-cue-type"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="cue-box next-cue" id="next-cue">
+                            <h3>Next Cue</h3>
+                            <div class="cue-content">
+                                <div class="cue-number" id="next-cue-number">--</div>
+                                <div class="cue-details">
+                                    <div class="cue-name" id="next-cue-name">Not Connected</div>
+                                    <div class="cue-type" id="next-cue-type"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <button id="refreshCueBtn" class="btn btn-sm btn-outline-secondary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd"
+                                    d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z" />
+                                <path
+                                    d="M8 4.466V.534a.25.25 0 0 1 .41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466z" />
+                            </svg>
+                            Refresh Cue Info
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-                            // Clear previous options
-                            workspaceSelect.innerHTML = '';
+            <div class="card mb-3">
+                <div class="card-header">
+                    <span>Transport Controls</span>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <button id="previousBtn" class="btn btn-outline-secondary btn-transport-sm"
+                            title="Previous Cue">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                                class="bi bi-skip-backward-fill" viewBox="0 0 16 16">
+                                <path
+                                    d="M.5 3.5A.5.5 0 0 0 0 4v8a.5.5 0 0 0 1 0V8.753l6.267 3.636c.54.313 1.233-.066 1.233-.697v-2.94l6.267 3.636c.54.314 1.233-.065 1.233-.696V4.308c0-.63-.693-1.01-1.233-.696L8.5 7.248v-2.94c0-.63-.692-1.01-1.233-.696L1 7.248V4a.5.5 0 0 0-.5-.5" />
+                            </svg>
+                        </button>
+                        <button id="stopBtn" class="btn btn-danger btn-transport" title="Stop">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor"
+                                class="bi bi-stop-fill" viewBox="0 0 16 16">
+                                <path
+                                    d="M5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a.5.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5A1.5 1.5 0 0 1 5 3.5" />
+                            </svg>
+                        </button>
+                        <button id="playBtn" class="btn btn-success btn-transport" title="GO!">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor"
+                                class="bi bi-play-fill" viewBox="0 0 16 16">
+                                <path
+                                    d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
+                            </svg>
+                        </button>
+                        <button id="panicBtn" class="btn btn-danger btn-transport" title="Panic - Hard stop all cues">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                class="bi bi-exclamation-octagon-fill" viewBox="0 0 16 16">
+                                <path
+                                    d="M11.46.146A.5.5 0 0 0 11.107 0H4.893a.5.5 0 0 0-.353.146L.146 4.54A.5.5 0 0 0 0 4.893v6.214a.5.5 0 0 0 .146.353l4.394 4.394a.5.5 0 0 0 .353.146h6.214a.5.5 0 0 0 .353-.146l4.394-4.394a.5.5 0 0 0 .146-.353V4.893a.5.5 0 0 0-.146-.353L11.46.146z" />
+                                <path
+                                    d="M8 4c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995A.905.905 0 0 1 8 4zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
+                            </svg>
+                        </button>
+                        <button id="nextBtn" class="btn btn-outline-secondary btn-transport-sm" title="Next Cue">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                                class="bi bi-skip-forward-fill" viewBox="0 0 16 16">
+                                <path
+                                    d="M15.5 3.5a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-1 0V8.753l-6.267 3.636c-.54.313-1.233-.066-1.233-.697v-2.94l-6.267 3.636C.693 12.703 0 12.324 0 11.693V4.308c0-.63.693-1.01 1.233-.696L7.5 7.248v-2.94c0-.63.693-1.01 1.233-.696L15 7.248V4a.5.5 0 0 1 .5-.5" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-                            // Populate workspace options
-                            if (workspaceData.status !== 'error' && Array.isArray(workspaceData.workspaces)) {
-                                workspaceData.workspaces.forEach(workspace => {
-                                    const option = document.createElement('option');
-                                    option.value = workspace.uniqueID; // Use uniqueID to track workspace
-                                    option.textContent = workspace.displayName;
-                                    workspaceSelect.appendChild(option);
-                                });
-                            } else {
-                                workspaceSection.style.display = 'none';
-                                alert(workspaceData.message || 'No workspaces available');
-                            }
-                        })
-                        .catch(error => console.error('Error fetching workspaces:', error));
-                });
+            <div class="card mb-3">
+                <div class="card-header">
+                    <span>Extended Controls</span>
+                </div>
+                <div class="card-body text-center">
+                    <div class="row mb-3 d-flex justify-content-center">
+                        <div class="col-md-4">
+                            <div class="d-grid">
+                                <button id="resetBtn" class="btn btn-outline-secondary mb-2" title="Reset Workspace">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                        class="bi bi-arrow-counterclockwise" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd"
+                                            d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2v1z" />
+                                        <path
+                                            d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466z" />
+                                    </svg>
+                                    Reset Workspace
+                                </button>
+                                <div class="input-group mb-3">
+                                    <select id="skipCueSelect" class="form-select">
+                                        <option value="" selected>Select Cue Number</option>
+                                    </select>
+                                    <button id="skipBtn" class="btn btn-primary" title="Go to selected cue without playing it">
+                                        Select Cue
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                // Handle workspace selection form submission
-                document.getElementById('workspaceForm').addEventListener('submit', function (event) {
-                    event.preventDefault();
-                    const workspaceId = document.getElementById('workspaceSelect').value;
-                    console.log("Selected workspace:", workspaceId);
+        <!-- Info Section -->
+        <div class="card mb-3">
+            <div class="card-header">Info</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <p class="mb-1"><strong>Private IP:</strong> {{ local_ip }}</p>
+                        <p class="mb-1"><strong>Port:</strong> {{ port }}</p>
+                        <p class="mb-0"><strong>Python Version:</strong> {{ python_version }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <p class="mb-1"><strong>Average Latency:</strong> <span id="averageLatency">--</span> ms</p>
+                        <p class="mb-1"><strong>Commands Sent:</strong> <span id="commandsSent">--</span></p>
+                        <p class="mb-0"><strong>Error Rate:</strong> <span id="errorRate">--</span>%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                    fetch('/select_workspace', {
-                        method: 'POST',
-                        body: new URLSearchParams({
-                            'workspace_id': workspaceId
-                        }),
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                        }
-                    }).then(response => response.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                document.getElementById('screenshotSec').style.display = "block";
-                                document.getElementById('controlSec').style.display = "block";
-                                // alert("Connected to workspace: " + data.workspace);
-                                // Set an interval to refresh the screenshot every 1000ms (1 second)
-                                setInterval(refreshScreenshot, 0);
-                                setInterval(fetchCues, 0);
-                            } else {
-                                alert("Failed to connect to workspace: " + data.message);
-                            }
-                        })
-                        .catch(error => console.error('Error selecting workspace:', error));
-                });
+        <footer class="mt-4 mb-5 text-center text-muted">
+    </div>
 
-                // Fetch the active and selected cues every second
-                function fetchCues() {
-                    fetch('/cue_info')
-                        .then(response => response.json())
-                        .then(data => {
-                            document.getElementById('activeCueNumber').textContent = data.active_cue_number || 'N/A';
-                            document.getElementById('activeCueName').textContent = data.active_cue_name || 'N/A';
-                            document.getElementById('selectedCueNumber').textContent = data.selected_cue_number || 'N/A';
-                            document.getElementById('selectedCueName').textContent = data.selected_cue_name || 'N/A';
-                        })
-                        .catch(error => console.error('Error fetching cues:', error));
-                }
+    <!-- Add these before your inline <script> -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
 
-                // Control actions
-                // Handle control button actions (Go, Next, etc.)
-                document.querySelectorAll('.action-btn').forEach(button => {
-                    button.addEventListener('click', function () {
-                        const action = this.dataset.action;
-                        console.log("Action to be sent: ", action);
+    <script>
+        const socket = io();
+        let updateTimer = null;
 
-                        // Define the corresponding OSC commands for each button action
-                        let oscCommand = '';
-                        switch (action) {
-                            case 'go': oscCommand = '/cue/go'; break;
-                            case 'next': oscCommand = '/cue/next'; break;
-                            case 'previous': oscCommand = '/cue/previous'; break;
-                            case 'panic': oscCommand = '/cue/panic'; break;
-                            case 'pause': oscCommand = '/cue/pause'; break;
-                            case 'resume': oscCommand = '/cue/resume'; break;
-                            default: oscCommand = ''; break;
-                        }
+        $(document).ready(function () {
+            refreshInstances();
+            setupEventHandlers();
+            setupSocketEvents();
+            startPeriodicUpdates();
+            updatePerformanceStats();  // initial fill
+        });
 
-                        // Send the command to the server (OSC client)
-                        fetch('/button_action', {
-                            method: 'POST',
-                            body: new URLSearchParams({
-                                'data-action': action
-                            }),
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded'
-                            }
-                        }).then(response => response.json())
-                            .then(data => {
-                                console.log(data);
-                            })
-                            .catch(error => console.error("Error in button action:", error));
-                    });
-                });
+        function setupEventHandlers() {
+            $('#refreshBtn').click(function () {
+                refreshInstances();
+            });
 
-                // This function will refresh the image every second
-                function refreshScreenshot() {
-                    fetch('/screenshot')  // Make a GET request to fetch the screenshot as base64
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.screenshot) {
-                                // Set the src attribute of the image to the base64 string
-                                document.getElementById('screenshot').src = 'data:image/png;base64,' + data.screenshot;
-                                document.getElementById('screenshot').style.display = 'block';
-                            }
-                        })
-                        .catch(error => console.error('Error fetching screenshot:', error));
+            $('#instancesList').on('click', '.instance-item', function () {
+                const instanceId = $(this).data('id');
+                connectToInstance(instanceId);
+            });
+
+            $('#playBtn').click(function () { sendCommand('play'); });
+            $('#stopBtn').click(function () { sendCommand('stop'); });
+            $('#nextBtn').click(function () { sendCommand('next'); });
+            $('#previousBtn').click(function () { sendCommand('previous'); });
+            $('#panicBtn').click(function () { sendCommand('panic');});
+
+            $('#resetBtn').click(function () {
+                if (confirm('Are you sure you want to reset the QLab workspace?')) {
+                    sendCommand('reset');
                 }
             });
-        </script>
-    </body>
+
+            $('#refreshCueBtn').click(function () { updateCueInfo();});
+            $('#disconnectBtn').click(function () { disconnectFromInstance(); });
+
+            $('#skipBtn').click(function () {
+                const cue = $('#skipCueSelect').val();
+                if (!cue) {
+                    alert('Please select a cue number');
+                    return;
+                }
+                $.ajax({
+                    url: '/api/skip',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ cue }),
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.success) {
+                            flashCommandFeedback('skip', true);
+                            setTimeout(updateCueInfo, 150);
+                        } else {
+                            alert(`Skip failed: ${response.error || 'Unknown error'}`);
+                            flashCommandFeedback('skip', false);
+                        }
+                    },
+                    error: function () {
+                        alert('Error sending skip command');
+                        flashCommandFeedback('skip', false);
+                    }
+                });
+            });
+        }
+
+        function setupSocketEvents() {
+            socket.on('qlab_state', function (data) {
+                if (data.connected) {
+                    updateConnectionUI(true, data.instance);
+                    if (data.current_cue) {
+                        updateCurrentSelectedCueDisplay(data.current_cue);
+                    }
+                    if (data.next_cue) {
+                        updateNextCueDisplay(data.next_cue);
+                    }
+                } else {
+                    updateConnectionUI(false);
+                }
+            });
+        }
+
+        function refreshInstances() {
+            $('#refreshStatus').text('Refreshing...');
+            $('#instancesList').empty();
+            $('#instancesList').html(`
+                <div class="text-center text-muted py-4">
+                    <div class="spinner-border spinner-border-sm" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Searching for QLab workspaces...</p>
+                </div>
+            `);
+
+            $.ajax({
+                url: '/api/instances',
+                method: 'GET',
+                dataType: 'json',
+                success: function (response) {
+                    displayInstances(response.instances);
+
+                    $.ajax({
+                        url: '/api/refresh_instances',
+                        method: 'POST',
+                        dataType: 'json',
+                        success: function (response) {
+                            if (response.success) {
+                                displayInstances(response.instances);
+                                updateQLabStatus(response.instances && response.instances.length > 0);
+                                $('#refreshStatus').text(response.message || `Found ${response.instances.length} workspace(s)`);
+                            } else {
+                                updateQLabStatus(false);
+                                $('#refreshStatus').text(`Error: ${response.error || 'Unknown error'}`);
+                            }
+                            setTimeout(function () {
+                                $('#refreshStatus').text('');
+                            }, 3000);
+                        },
+                        error: function () {
+                            updateQLabStatus(false);
+                            $('#refreshStatus').text('Error refreshing QLab status');
+                            setTimeout(function () {
+                                $('#refreshStatus').text('');
+                            }, 3000);
+                        }
+                    });
+                },
+                error: function () {
+                    updateQLabStatus(false);
+                    $('#refreshStatus').text('Error loading QLab status');
+                    setTimeout(function () {
+                        $('#refreshStatus').text('');
+                    }, 3000);
+                }
+            });
+        }
+
+        function updateQLabStatus(isRunning) {
+            const statusElement = $('#qlabStatus');
+            
+            if (isRunning) {
+                statusElement.removeClass('notRunning').addClass('running');
+                statusElement.html(`
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle-fill" viewBox="0 0 16 16">
+                        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                    </svg>
+                    QLab is running
+                `);
+            } else {
+                statusElement.removeClass('running').addClass('notRunning');
+                statusElement.html(`
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-circle-fill" viewBox="0 0 16 16">
+                        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
+                    </svg>
+                    QLab is not running
+                `);
+            }
+        }
+
+        function displayInstances(instances) {
+            $('#instancesList').empty();
+            if (!instances || instances.length === 0) {
+                $('#instancesList').html(`
+                    <div class="no-workspaces-message">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-folder-x" viewBox="0 0 16 16">
+                            <path d="M.54 3.87.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3h3.982a2 2 0 0 1 1.992 2.181L15.546 8H15c-.268 0-.505.11-.707.293-.202.183-.293.42-.293.707v-.006l-.006.006-.004.004V13a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.227l-.266.274a.5.5 0 0 1-.708-.708L2.59 6.228Z"/>
+                            <path d="M6.854 7.146a.5.5 0 1 0-.708.708L7.293 9l-1.147 1.146a.5.5 0 0 0 .708.708L8 9.707l1.146 1.147a.5.5 0 0 0 .708-.708L8.707 9l1.147-1.146a.5.5 0 0 0-.708-.708L8 8.293 6.854 7.146Z"/>
+                        </svg>
+                        <p>No QLab workspaces found</p>
+                        <p class="small">Launch QLab and open a workspace, then click Refresh.</p>
+                    </div>
+                `);
+                return;
+            }
+
+            instances.forEach(function (instance) {
+                const listItem = $(`<div class="instance-item" data-id="${instance.id}">
+                    <div class="workspace-item">
+                        <span class="workspace-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-play" viewBox="0 0 16 16">
+                                <path d="M6 6.883v4.234a.5.5 0 0 0 .757.429l3.528-2.117a.5.5 0 0 0 0-.858L6.757 6.454a.5.5 0 0 0-.757.429z"/>
+                                <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                            </svg>
+                        </span>
+                        <strong>${instance.name.replace('QLab - ', '')}</strong>
+                    </div>
+                </div>`);
+                $('#instancesList').append(listItem);
+            });
+        }
+
+        function connectToInstance(instanceId) {
+            // Add a loading indicator to show the system is working
+            $('#instancesList').html(`
+                <div class="text-center text-muted py-4">
+                    <div class="spinner-border spinner-border-sm" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Connecting to workspace...</p>
+                </div>
+            `);
+            
+            $.ajax({
+                url: `/api/connect/${instanceId}`,
+                method: 'POST',
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success) {
+                        console.log("Successfully connected to workspace:", response);
+                        updateConnectionUI(true, response);
+
+                        // Show the connected instance info and hide the instance list
+                        $('#instancesSection').hide();
+                        $('#connectedInstanceSection').show();
+                        
+                        // show ID only if it's non-null/undefined and not empty when stringified
+                        if (response.workspace_id != null && String(response.workspace_id).trim() !== '') {
+                            $('#instanceName').text(`${response.name} (ID: ${response.workspace_id})`);
+                        } else {
+                            $('#instanceName').text(response.name);
+                        }
+                        
+                        // Make sure control panel is visible
+                        $('#controlPanel').removeClass('hidden').show();
+
+                        // If the response includes current selected cue info, update the display
+                        if (response.currentSelectedCue) {
+                            updateCurrentSelectedCueDisplay(response.currentSelectedCue);
+                        }
+                        if (response.nextCue) {
+                            updateNextCueDisplay(response.nextCue);
+                        }
+                        
+                        // Also do a fresh cue info update
+                        setTimeout(updateCueInfo, 200);
+
+                        // Populate the skip dropdown
+                        populateSkipDropdown();
+                    } else {
+                        // Show the error and refresh the instances list
+                        alert(`Connection failed: ${response.error || 'Unknown error'}`);
+                        refreshInstances();
+                    }
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    alert(`Error connecting to QLab workspace: ${textStatus} - ${errorThrown}`);
+                    console.error("Connection error:", jqXHR, textStatus, errorThrown);
+                    refreshInstances();
+                }
+            });
+        }
+
+        function disconnectFromInstance() {
+            $.ajax({
+                url: '/api/disconnect',
+                method: 'POST',
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success) {
+                        updateConnectionUI(false);
+
+                        // Show the instance list and hide connected instance info
+                        $('#instancesSection').show();
+                        $('#connectedInstanceSection').hide();
+
+                        // Fix: Properly hide the control panel
+                        $('#controlPanel').addClass('hidden').css('display', 'none');
+
+                        // Reset stats
+                        $('#connectionStat').text('Disconnected');
+                        
+                        // Refresh the list of workspaces
+                        refreshInstances();
+                    } else {
+                        alert(`Disconnect failed: ${response.error || 'Unknown error'}`);
+                    }
+                },
+                error: function () {
+                    alert('Error disconnecting from QLab workspace');
+                }
+            });
+        }
+
+        function updateConnectionUI(connected, instanceInfo = null) {
+            if (connected) {
+                $('.status-indicator').removeClass('status-disconnected').addClass('status-connected');
+                $('#connectionStatus .status-indicator').removeClass('status-disconnected').addClass('status-connected');
+                $('#connectionText').text('Connected');
+
+                if (instanceInfo) {
+                    // show ID only if it's non-null/undefined and not empty when stringified
+                    if (instanceInfo.workspace_id != null && String(instanceInfo.workspace_id).trim() !== '') {
+                        $('#instanceName').text(`${instanceInfo.name} (ID: ${instanceInfo.workspace_id})`);
+                    } else {
+                        $('#instanceName').text(instanceInfo.name);
+                    }
+                }
+            } else {
+                $('.status-indicator').removeClass('status-connected').addClass('status-disconnected');
+                $('#connectionStatus .status-indicator').removeClass('status-connected').addClass('status-disconnected');
+                $('#connectionText').text('Disconnected');
+            }
+        }
+
+        function sendCommand(command) {
+            $.ajax({
+                url: `/api/command/${command}`,
+                method: 'POST',
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success) {
+                        flashCommandFeedback(command.split('/')[0], true);
+                        setTimeout(updateCueInfo, 150);
+                    } else {
+                        console.error(`Command failed: ${response.error || 'Unknown error'}`);
+                        flashCommandFeedback(command.split('/')[0], false);
+                    }
+                },
+                error: function () {
+                    console.error(`Error sending command: ${command}`);
+                    flashCommandFeedback(command.split('/')[0], false);
+                }
+            });
+        }
+
+        function flashCommandFeedback(command, success) {
+            let btnSelector;
+            switch (command) {
+                case 'play': btnSelector = '#playBtn'; break;
+                case 'stop': btnSelector = '#stopBtn'; break;
+                case 'next': btnSelector = '#nextBtn'; break;
+                case 'previous': btnSelector = '#previousBtn'; break;
+                case 'panic': btnSelector = '#panicBtn, #panicBtnExt'; break;
+                case 'reset': btnSelector = '#resetBtn'; break;
+                case 'skip': btnSelector = '#skipBtn'; break;
+                default: return;
+            }
+
+            const originalClasses = {};
+            $(btnSelector).each(function() {
+                originalClasses[this.id] = $(this).attr('class');
+            });
+            
+            if (success) {
+                $(btnSelector).addClass('btn-outline-light');
+                setTimeout(() => {
+                    $(btnSelector).each(function() {
+                        $(this).attr('class', originalClasses[this.id]);
+                    });
+                }, 200);
+            } else {
+                $(btnSelector).addClass('btn-outline-danger');
+                setTimeout(() => {
+                    $(btnSelector).each(function() {
+                        $(this).attr('class', originalClasses[this.id]);
+                    });
+                }, 500);
+            }
+        }
+
+        // Current/Next cue display functions
+        function updateCurrentSelectedCueDisplay(cue) {
+            $('#current-selected-cue').removeClass('loading');
+            
+            if (!cue) {
+                $('#current-selected-cue-number').text('--');
+                $('#current-selected-cue-name').text('No data');
+                $('#current-selected-cue-type').text('');
+                return;
+            }
+            
+            // Ensure values have sensible defaults
+            const number = (cue.number && cue.number !== '?') ? cue.number : '--';
+            const name = cue.name || 'Unnamed';
+            const type = cue.type || '';
+            
+            $('#current-selected-cue-number').text(number);
+            $('#current-selected-cue-name').text(name);
+            $('#current-selected-cue-type').text(type);
+        }
+
+        function updateNextCueDisplay(cue) {
+            $('#next-cue').removeClass('loading');
+            
+            if (!cue) {
+                $('#next-cue-number').text('--');
+                $('#next-cue-name').text('No data');
+                $('#next-cue-type').text('');
+                return;
+            }
+            
+            // Ensure values have sensible defaults
+            const number = (cue.number && cue.number !== '?') ? cue.number : '--';
+            const name = cue.name || 'Unnamed';
+            const type = cue.type || '';
+            
+            $('#next-cue-number').text(number);
+            $('#next-cue-name').text(name);
+            $('#next-cue-type').text(type);
+        }
+
+        function updateCueInfo() {
+            // Add loading indicators
+            $('#current-selected-cue').addClass('loading');
+            $('#next-cue').addClass('loading');
+            
+            $.ajax({
+                url: '/api/cue_info',
+                method: 'GET',
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success) {
+                        updateCurrentSelectedCueDisplay(response.current);
+                        updateNextCueDisplay(response.next);
+                    } else {
+                        console.error(`Error getting cue info: ${response.error || 'Unknown error'}`);
+                        // Show error state
+                        $('#current-selected-cue').removeClass('loading');
+                        $('#next-cue').removeClass('loading');
+                        $('#current-selected-cue-name').text('Error: ' + (response.error || 'Unknown error'));
+                        $('#next-cue-name').text('Error: ' + (response.error || 'Unknown error'));
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error getting cue info from server:', error);
+                    // Show error state
+                    $('#current-selected-cue').removeClass('loading');
+                    $('#next-cue').removeClass('loading');
+                    $('#current-selected-cue-name').text('Connection error');
+                    $('#next-cue-name').text('Connection error');
+                }
+            });
+        }
+
+        // Performance Stats
+        function updatePerformanceStats() {
+            $.ajax({
+                url: '/api/performance',
+                method: 'GET',
+                dataType: 'json',
+                success: function (response) {
+                    if (response.connected) {
+                        $('#averageLatency').text(response.average_latency);
+                        $('#commandsSent').text(response.commands_sent);
+                        $('#errorRate').text(response.error_rate);
+                    } else {
+                        $('#averageLatency').text('--');
+                        $('#commandsSent').text('--');
+                        $('#errorRate').text('--');
+                    }
+                },
+                error: function () {
+                    console.error('Error getting performance stats from server');
+                }
+            });
+        }
+
+        function populateSkipDropdown() {
+            const sel = $('#skipCueSelect');
+            sel.empty().append('<option value="">Select Cue Number</option>');
+            
+            // Show loading state
+            sel.prop('disabled', true);
+            sel.append('<option value="" disabled>Loading cues...</option>');
+            console.log("Fetching cues from server...");
+            
+            $.ajax({
+                url: '/api/cues',
+                method: 'GET',
+                dataType: 'json',
+                success: function (resp) {
+                    sel.empty().append('<option value="">Select Cue Number</option>');
+                    
+                    if (resp.cues && resp.cues.length > 0) {
+                        console.log(`Got ${resp.cues.length} cues from server`);
+                        
+                        // Use cues in original QLab order
+                        resp.cues.forEach(c => {
+                            // For nested cues, display with appropriate indentation already in the name
+                            // The server now sends the name with proper "-->" prefix
+                            sel.append(
+                                `<option value="${c.id}">${c.number}: ${c.name}</option>`
+                            );
+                        });
+                        
+                        console.log(`Added ${resp.cues.length} cues to dropdown with hierarchy information`);
+                    } else {
+                        sel.append('<option value="" disabled>No cues found</option>');
+                        console.warn("No cues found in response:", resp);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error fetching cues:", error, xhr.responseText);
+                    sel.empty().append('<option value="">Select Cue Number</option>');
+                    sel.append('<option value="" disabled>Error loading cues</option>');
+                },
+                complete: function() {
+                    sel.prop('disabled', false);
+                }
+            });
+        }
+
+        function startPeriodicUpdates() {
+            updateTimer = setInterval(function () {
+                if ($('#connectionStatus .status-indicator').hasClass('status-connected')) {
+                    updateCueInfo();
+                    updatePerformanceStats();
+                }
+            }, 1000);  // every second
+        }
+
+        $(window).on('beforeunload', function () {
+            if (updateTimer) {
+                clearInterval(updateTimer);
+            }
+        });
+    </script>
+</body>
+
 </html>
